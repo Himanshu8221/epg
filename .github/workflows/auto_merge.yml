@@ -5,6 +5,9 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write  # 👈 THIS GIVES PUSH ACCESS TO GITHUB_TOKEN
+
 jobs:
   merge-and-commit:
     runs-on: ubuntu-latest
