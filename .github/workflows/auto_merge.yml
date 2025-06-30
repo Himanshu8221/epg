@@ -30,4 +30,7 @@ jobs:
           git config user.email "epg-bot@example.com"
           git add merged_epg.xml
           git commit -m "Update merged EPG [auto]" || echo "No changes to commit"
-          git push
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
