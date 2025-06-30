@@ -2,15 +2,19 @@ name: Merge EPG Daily
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'  # Daily at 00:00 UTC
   workflow_dispatch:
 
 permissions:
-  contents: write  # 👈 THIS GIVES PUSH ACCESS TO GITHUB_TOKEN
+  contents: write  # Allows the workflow to push changes
 
 jobs:
   merge-and-commit:
     runs-on: ubuntu-latest
+
+    env:
+      EPG_URL_1: ${{ secrets.EPG_URL_1 }}
+      EPG_URL_2: ${{ secrets.EPG_URL_2 }}
 
     steps:
       - name: Checkout code
@@ -22,7 +26,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install python-dotenv requests
+        run: pip install requests
 
       - name: Run EPG merge script
         run: python merge_epg.py
@@ -31,10 +35,10 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-      - name: Commit changes
+      - name: Commit and push merged EPG
         run: |
           git config user.name "EPG Bot"
           git config user.email "epg-bot@example.com"
           git add merged_epg.xml
           git commit -m "Update merged EPG [auto]" || echo "No changes to commit"
-          git push origin HEAD:main
+          git push origin HEAD:${{ github.ref_name }}
