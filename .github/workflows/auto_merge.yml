@@ -1,0 +1,33 @@
+name: Merge EPG Daily
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  merge-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install python-dotenv requests
+
+      - name: Run EPG merge script
+        run: python merge_epg.py
+
+      - name: Commit changes
+        run: |
+          git config user.name "EPG Bot"
+          git config user.email "epg-bot@example.com"
+          git add merged_epg.xml
+          git commit -m "Update merged EPG [auto]" || echo "No changes to commit"
+          git push
