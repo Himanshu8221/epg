@@ -2,11 +2,11 @@ name: Merge EPG Daily
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Daily at 00:00 UTC
+    - cron: '0 0 * * *'  # Runs daily at 00:00 UTC
   workflow_dispatch:
 
 permissions:
-  contents: write  # Allows the workflow to push changes
+  contents: write
 
 jobs:
   merge-and-commit:
@@ -17,25 +17,38 @@ jobs:
       EPG_URL_2: ${{ secrets.EPG_URL_2 }}
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: pip install requests
 
-      - name: Run EPG merge script
+      - name: ▶️ Run EPG merge script
         run: python merge_epg.py
 
-      - name: Set authenticated git remote
+      - name: 📂 Check if merged_epg.xml exists
+        id: check_file
+        run: |
+          if [ -f "merged_epg.xml" ]; then
+            echo "✅ merged_epg.xml exists"
+            echo "file_exists=true" >> $GITHUB_ENV
+          else
+            echo "❌ merged_epg.xml not created"
+            echo "file_exists=false" >> $GITHUB_ENV
+          fi
+
+      - name: 🔐 Set authenticated git remote
+        if: env.file_exists == 'true'
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-      - name: Commit and push merged EPG
+      - name: ✅ Commit and push merged EPG
+        if: env.file_exists == 'true'
         run: |
           git config user.name "EPG Bot"
           git config user.email "epg-bot@example.com"
