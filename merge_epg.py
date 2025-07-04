@@ -1,6 +1,8 @@
 import os
 import xml.etree.ElementTree as ET
 import requests
+import gzip
+import shutil
 
 print("🔧 Starting EPG merge process...")
 
@@ -14,16 +16,22 @@ if not epg_url_1:
 if not epg_url_2:
     print("❌ EPG_URL_2 is missing.")
 
-def download_xml(url, filename):
+def download_and_extract(url, out_xml, temp_gz):
     try:
-        print(f"➡️ Downloading XML from: {url}")
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        with open(filename, 'wb') as f:
-            f.write(response.content)
-        print(f"✅ Downloaded and saved to: {filename}")
+        print(f"➡️ Downloading from: {url}")
+        r = requests.get(url, timeout=30)
+        r.raise_for_status()
+        with open(temp_gz, 'wb') as f:
+            f.write(r.content)
+        print(f"✅ Downloaded: {temp_gz}")
+        
+        # Decompress
+        with gzip.open(temp_gz, 'rb') as f_in:
+            with open(out_xml, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        print(f"📂 Extracted to: {out_xml}")
     except Exception as e:
-        print(f"❌ Failed to download {url}: {e}")
+        print(f"❌ Failed to download or extract {url}: {e}")
 
 def merge_epg(epg1, epg2, output):
     try:
@@ -55,9 +63,10 @@ def merge_epg(epg1, epg2, output):
 # Step 2: Run the process
 if epg_url_1 and epg_url_2:
     print("✅ Environment variables loaded.")
-    print("⬇️ Starting download of EPG files...")
-    download_xml(epg_url_1, 'epg1.xml')
-    download_xml(epg_url_2, 'epg2.xml')
+    print("⬇️ Starting download and extraction of EPG files...")
+
+    download_and_extract(epg_url_1, 'epg1.xml', 'epg1.xml.gz')
+    download_and_extract(epg_url_2, 'epg2.xml', 'epg2.xml.gz')
 
     print("🔀 Starting merge of EPG files...")
     merge_epg('epg1.xml', 'epg2.xml', 'merged_epg.xml')
