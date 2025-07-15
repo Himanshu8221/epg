@@ -10,7 +10,7 @@ print("🔧 Starting EPG merge process...")
 epg_urls = [
     os.getenv("EPG_URL_1"),
     os.getenv("EPG_URL_2"),
-    os.getenv("EPG_URL_3")
+    #os.getenv("EPG_URL_3")
 ]
 
 for idx, url in enumerate(epg_urls, 1):
