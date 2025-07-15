@@ -7,14 +7,15 @@ import shutil
 print("🔧 Starting EPG merge process...")
 
 # Step 1: Read environment variables
-epg_url_1 = os.getenv("EPG_URL_1")
-epg_url_2 = os.getenv("EPG_URL_2")
+epg_urls = [
+    os.getenv("EPG_URL_1"),
+    os.getenv("EPG_URL_2"),
+    os.getenv("EPG_URL_3")
+]
 
-print("📥 Checking environment variables...")
-if not epg_url_1:
-    print("❌ EPG_URL_1 is missing.")
-if not epg_url_2:
-    print("❌ EPG_URL_2 is missing.")
+for idx, url in enumerate(epg_urls, 1):
+    if not url:
+        print(f"❌ EPG_URL_{idx} is missing.")
 
 def download_and_extract(url, out_xml, temp_gz):
     try:
@@ -33,42 +34,49 @@ def download_and_extract(url, out_xml, temp_gz):
     except Exception as e:
         print(f"❌ Failed to download or extract {url}: {e}")
 
-def merge_epg(epg1, epg2, output):
+def merge_multiple_epgs(epg_files, output):
     try:
-        print(f"📂 Parsing EPG files: {epg1}, {epg2}")
-        tree1 = ET.parse(epg1)
-        root1 = tree1.getroot()
+        print("📂 Parsing and merging multiple EPG XML files...")
+        base_tree = ET.parse(epg_files[0])
+        base_root = base_tree.getroot()
 
-        tree2 = ET.parse(epg2)
-        root2 = tree2.getroot()
+        total_channels = 0
+        total_programmes = 0
 
-        print("🧩 Merging <channel> and <programme> elements...")
-        added_channels = 0
-        added_programmes = 0
+        for epg in epg_files[1:]:
+            tree = ET.parse(epg)
+            root = tree.getroot()
 
-        for channel in root2.findall('channel'):
-            root1.append(channel)
-            added_channels += 1
+            for channel in root.findall('channel'):
+                base_root.append(channel)
+                total_channels += 1
 
-        for programme in root2.findall('programme'):
-            root1.append(programme)
-            added_programmes += 1
+            for programme in root.findall('programme'):
+                base_root.append(programme)
+                total_programmes += 1
 
-        tree1.write(output, encoding='utf-8', xml_declaration=True)
-        print(f"✅ Merge complete. Added {added_channels} channels and {added_programmes} programmes.")
+        base_tree.write(output, encoding='utf-8', xml_declaration=True)
+        print(f"✅ Merge complete. Added {total_channels} channels and {total_programmes} programmes.")
         print(f"💾 Merged EPG saved as: {output}")
     except Exception as e:
         print(f"❌ Error during merging: {e}")
 
 # Step 2: Run the process
-if epg_url_1 and epg_url_2:
+valid_urls = [url for url in epg_urls if url]
+
+if len(valid_urls) >= 2:
     print("✅ Environment variables loaded.")
     print("⬇️ Starting download and extraction of EPG files...")
 
-    download_and_extract(epg_url_1, 'epg1.xml', 'epg1.xml.gz')
-    download_and_extract(epg_url_2, 'epg2.xml', 'epg2.xml.gz')
+    xml_files = []
+
+    for i, url in enumerate(valid_urls, 1):
+        xml = f"epg{i}.xml"
+        gz = f"epg{i}.xml.gz"
+        download_and_extract(url, xml, gz)
+        xml_files.append(xml)
 
     print("🔀 Starting merge of EPG files...")
-    merge_epg('epg1.xml', 'epg2.xml', 'merged_epg.xml')
+    merge_multiple_epgs(xml_files, 'merged_epg.xml')
 else:
-    print("❌ Cannot continue. One or both EPG URLs are missing.")
+    print("❌ Cannot continue. At least 2 valid EPG URLs are required.")
