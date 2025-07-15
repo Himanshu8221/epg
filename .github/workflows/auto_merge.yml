@@ -13,6 +13,7 @@ jobs:
     env:
       EPG_URL_1: ${{ secrets.EPG_URL_1 }}
       EPG_URL_2: ${{ secrets.EPG_URL_2 }}
+      EPG_URL_3: ${{ secrets.EPG_URL_3 }}
 
     steps:
       - name: 📥 Checkout code
